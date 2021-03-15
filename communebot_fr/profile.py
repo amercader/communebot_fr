@@ -75,7 +75,7 @@ class CommuneBotFr(BaseProfile):
 
         wms_options = {
             "url": wms_url,
-            "layer": "ORTHOIMAGERY.ORTHOPHOTOS.BDORTHO",
+            "layer": "HR.ORTHOIMAGERY.ORTHOPHOTOS",
             "version": "1.3.0",
             "crs": "EPSG:4258",
             "bbox": bbox,
