@@ -1,4 +1,5 @@
 import requests
+
 from munibot.profiles.base import BaseProfile
 from munibot.config import config
 
@@ -27,8 +28,8 @@ class CommuneBotFr(BaseProfile):
     Given a feature id, returns a tuple with the extent and the geometry of the
     the boundaries of the feature.
 
-    The extent is a tuple containing (minx, miny, maxx, maxy). The geometry is a
-    dict containing the geometry in GeoJSON format.
+    The extent is a tuple containing (minx, miny, maxx, maxy). The geometry is
+    a dict containing the geometry in GeoJSON format.
     """
 
     def get_boundaries(self, id_):
@@ -41,7 +42,10 @@ class CommuneBotFr(BaseProfile):
 
         feature_collection = r.json()
 
-        bbox = feature_collection["bbox"]
+        try:
+            bbox = feature_collection["bbox"]
+        except KeyError:
+            raise ValueError(f"No geometry returned for commune {id_}")
 
         extent = (
             bbox[0],
@@ -67,6 +71,8 @@ class CommuneBotFr(BaseProfile):
 
         bbox = self.extend_bbox(bbox)
 
+        crs = self._get_crs(bbox)
+
         wms_url = "https://wxs.ign.fr/{}/geoportail/r/wms".format(
             config["profile:fr"]["ign_key"]
         )
@@ -77,7 +83,7 @@ class CommuneBotFr(BaseProfile):
             "url": wms_url,
             "layer": "HR.ORTHOIMAGERY.ORTHOPHOTOS",
             "version": "1.3.0",
-            "crs": "EPSG:4258",
+            "crs": crs,
             "bbox": bbox,
             "format": "image/geotiff",
             "headers": headers,
@@ -86,7 +92,8 @@ class CommuneBotFr(BaseProfile):
         img = self.get_wms_image(**wms_options)
 
         if img.info().get("Content-Type") == "application/xml":
-            raise ValueError("Error retrieving WMS image: {}".format(img.read()))
+            raise ValueError(
+                "Error retrieving WMS image: {}".format(img.read()))
 
         return img
 
@@ -131,3 +138,11 @@ class CommuneBotFr(BaseProfile):
     def after_tweet(self, id_, status_id):
 
         pass
+
+    def _get_crs(self, bbox):
+
+        # YOLO
+        outre_mer = (
+            bbox[0] < -7.30 or bbox[2] > 11 or bbox[1] < 39 or bbox[3] > 52)
+
+        return "CRS:84" if outre_mer else "EPSG:4258"
