@@ -1,7 +1,9 @@
-import requests
+import sqlite3
+import urllib
 
-from munibot.profiles.base import BaseProfile
+import requests
 from munibot.config import config
+from munibot.profiles.base import BaseProfile
 
 
 class CommuneBotFr(BaseProfile):
@@ -92,8 +94,7 @@ class CommuneBotFr(BaseProfile):
         img = self.get_wms_image(**wms_options)
 
         if img.info().get("Content-Type") == "application/xml":
-            raise ValueError(
-                "Error retrieving WMS image: {}".format(img.read()))
+            raise ValueError("Error retrieving WMS image: {}".format(img.read()))
 
         return img
 
@@ -103,6 +104,25 @@ class CommuneBotFr(BaseProfile):
     """
 
     def get_text(self, id_):
+
+        db = sqlite3.connect(config["profile:fr"]["db_path"])
+
+        data = db.execute(
+            """
+            SELECT nom, nom_departement
+            FROM communes_fr
+            WHERE insee = ?
+            """,
+            (id_,),
+        )
+
+        name_commune, name_dep = data.fetchone()
+
+        wiki_link = "https://fr.wikipedia.org/wiki/{}".format(
+            urllib.parse.quote(name_commune.replace(" ", "_"))
+        )
+
+        return f"{name_commune} ({name_dep})\n\n\n{wiki_link}"
 
         raise NotImplementedError
 
@@ -115,7 +135,18 @@ class CommuneBotFr(BaseProfile):
 
     def get_next_id(self):
 
-        raise NotImplementedError
+        db = sqlite3.connect(config["profile:fr"]["db_path"])
+
+        id_ = db.execute(
+            """
+            SELECT insee
+            FROM communes_fr
+            WHERE tweet_fr IS NULL
+            ORDER BY RANDOM()
+            LIMIT 1"""
+        )
+
+        return id_.fetchone()[0]
 
     # Optional hooks
 
@@ -128,7 +159,20 @@ class CommuneBotFr(BaseProfile):
 
     def get_lon_lat(self, id_):
 
-        return None, None
+        db = sqlite3.connect(config["profile:fr"]["db_path"])
+
+        data = db.execute(
+            """
+            SELECT lon, lat
+            FROM communes_fr
+            WHERE insee = ?
+            """,
+            (id_,),
+        )
+
+        lon, lat = data.fetchone()
+
+        return lon, lat
 
     """
     Function that will be called after sending the tweet, that will receive
@@ -137,12 +181,27 @@ class CommuneBotFr(BaseProfile):
 
     def after_tweet(self, id_, status_id):
 
-        pass
+        db = sqlite3.connect(config["profile:fr"]["db_path"])
+
+        db.execute(
+            """
+            UPDATE communes_fr
+            SET tweet_fr = ?
+            WHERE insee = ?
+            """,
+            (
+                status_id,
+                id_,
+            ),
+        )
+
+        db.commit()
+
+    # Internal methods
 
     def _get_crs(self, bbox):
 
         # YOLO
-        outre_mer = (
-            bbox[0] < -7.30 or bbox[2] > 11 or bbox[1] < 39 or bbox[3] > 52)
+        outre_mer = bbox[0] < -7.30 or bbox[2] > 11 or bbox[1] < 39 or bbox[3] > 52
 
         return "CRS:84" if outre_mer else "EPSG:4258"
