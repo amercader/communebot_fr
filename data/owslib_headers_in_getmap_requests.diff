@@ -1,0 +1,86 @@
+diff --git a/owslib/map/wms111.py b/owslib/map/wms111.py
+index aef8e31e..a5cc181d 100644
+--- a/owslib/map/wms111.py
++++ b/owslib/map/wms111.py
+@@ -259,7 +259,7 @@ def getmap(self, layers=None, styles=None, srs=None, bbox=None,
+ 
+         self.request = bind_url(base_url) + data
+ 
+-        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth)
++        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth, headers=self.headers)
+ 
+         # check for service exceptions, and return
+         if u.info().get('Content-Type', '').split(';')[0] in ['application/vnd.ogc.se_xml']:
+@@ -326,7 +326,7 @@ def getfeatureinfo(self,
+ 
+         self.request = bind_url(base_url) + data
+ 
+-        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth)
++        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth, headers=self.headers)
+ 
+         # check for service exceptions, and return
+         if u.info()['Content-Type'] == 'application/vnd.ogc.se_xml':
+@@ -601,7 +601,7 @@ def parse_remote_metadata(self, timeout=30):
+                     and metadataUrl['format'].lower() in ['application/xml', 'text/xml']:  # download URL
+                 try:
+                     content = openURL(
+-                        metadataUrl['url'], timeout=timeout, auth=self.auth)
++                        metadataUrl['url'], timeout=timeout, auth=self.auth, headers=self.headers)
+                     doc = etree.fromstring(content.read())
+ 
+                     if metadataUrl['type'] == 'FGDC':
+diff --git a/owslib/map/wms130.py b/owslib/map/wms130.py
+index ec068173..ab3f97b6 100644
+--- a/owslib/map/wms130.py
++++ b/owslib/map/wms130.py
+@@ -305,7 +305,7 @@ def getmap(self, layers=None,
+ 
+         self.request = bind_url(base_url) + data
+ 
+-        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth)
++        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth, headers=self.headers)
+ 
+         # need to handle casing in the header keys
+         headers = {}
+@@ -380,7 +380,7 @@ def getfeatureinfo(self, layers=None,
+ 
+         self.request = bind_url(base_url) + data
+ 
+-        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth)
++        u = openURL(base_url, data, method, timeout=timeout or self.timeout, auth=self.auth, headers=self.headers)
+ 
+         # check for service exceptions, and return
+         if u.info()['Content-Type'] == 'XML':
+diff --git a/tests/test_wms_getmap.py b/tests/test_wms_getmap.py
+index c0c6f4bc..d1f49edc 100644
+--- a/tests/test_wms_getmap.py
++++ b/tests/test_wms_getmap.py
+@@ -1,3 +1,5 @@
++from unittest import mock
++
+ import pytest
+ from tests.utils import service_ok
+ 
+@@ -151,3 +153,22 @@ def test_ncwms2():
+     assert "height=256" in wms.request
+     assert "format=image%2Fpng" in wms.request
+     assert "transparent=TRUE" in wms.request
++
++
++@pytest.mark.parametrize('wms_version', ['1.1.1', '1.3.0'])
++def test_wms_sends_headers(wms_version):
++    """Test that if headers are provided in the WMS class they are sent
++    when performing HTTP requests (in this case for GetCapabilities)
++    """
++
++    with mock.patch('owslib.util.requests.request', side_effect=RuntimeError) as mock_request:
++        try:
++            WebMapService(
++                'http://example.com/wms',
++                version=wms_version,
++                headers={'User-agent': 'my-app/1.0'}
++            )
++        except RuntimeError:
++
++            assert mock_request.called
++            assert mock_request.call_args[1]['headers'] == {'User-agent': 'my-app/1.0'}

@@ -28,6 +28,10 @@ twitter_secret=CHANGE_ME
 db_path=/path/to/data/communes_fr.sqlite
 ```
 
-### License
+### Patches
+
+As of April 2021 this bot requires a [patch in OWSLib](https://github.com/geopython/OWSLib/pull/763) to be able to send headers as part of the WMS `GetMap` requests. The patch is included in the `data` folder.
+
+## License
 
 [MIT](/amercader/munibot/blob/master/LICENSE.txt)
