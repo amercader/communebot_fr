@@ -7,7 +7,7 @@ A friendly Twitter bot built with [Munibot](https://github.com/amercader/munibot
 Install it with pip:
 
 ```
-pip install communebot_fr
+pip install communebot-fr
 ```
 
 And follow the instructions on [Munibot's documentation](https://github.com/amercader/munibot#usage) regarding configuration and setup.
