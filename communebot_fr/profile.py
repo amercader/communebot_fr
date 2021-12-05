@@ -110,7 +110,7 @@ class CommuneBotFr(BaseProfile):
         data = db.execute(
             """
             SELECT nom, nom_departement
-            FROM communes_fr
+            FROM fr
             WHERE insee = ?
             """,
             (id_,),
@@ -140,7 +140,7 @@ class CommuneBotFr(BaseProfile):
         id_ = db.execute(
             """
             SELECT insee
-            FROM communes_fr
+            FROM fr
             WHERE tweet_fr IS NULL
             ORDER BY RANDOM()
             LIMIT 1"""
@@ -164,7 +164,7 @@ class CommuneBotFr(BaseProfile):
         data = db.execute(
             """
             SELECT lon, lat
-            FROM communes_fr
+            FROM fr
             WHERE insee = ?
             """,
             (id_,),
@@ -185,7 +185,7 @@ class CommuneBotFr(BaseProfile):
 
         db.execute(
             """
-            UPDATE communes_fr
+            UPDATE fr
             SET tweet_fr = ?
             WHERE insee = ?
             """,
