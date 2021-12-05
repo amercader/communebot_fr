@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="communebot_fr",
-    version="0.0.1",
+    version="0.0.2",
     author="Adrià Mercader",
     author_email="amercadero@gmail.com",
     description="A Twitter bot built with munibot that tweets aerial imagery pictures of France communes",
