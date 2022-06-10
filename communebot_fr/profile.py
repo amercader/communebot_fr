@@ -75,15 +75,13 @@ class CommuneBotFr(BaseProfile):
 
         crs = self._get_crs(bbox)
 
-        wms_url = "https://wxs.ign.fr/{}/geoportail/r/wms".format(
-            config["profile:fr"]["ign_key"]
-        )
+        wms_url = "https://wxs.ign.fr/essentiels/geoportail/r/wms"
 
         headers = {"User-Agent": "munibot-fr"}
 
         wms_options = {
             "url": wms_url,
-            "layer": "HR.ORTHOIMAGERY.ORTHOPHOTOS",
+            "layer": "ORTHOIMAGERY.ORTHOPHOTOS",
             "version": "1.3.0",
             "crs": crs,
             "bbox": bbox,
